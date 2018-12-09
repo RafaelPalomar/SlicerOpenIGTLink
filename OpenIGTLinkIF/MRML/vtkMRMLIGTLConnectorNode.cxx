@@ -1837,7 +1837,10 @@ int vtkMRMLIGTLConnectorNode::Stop()
 void vtkMRMLIGTLConnectorNode::PeriodicProcess()
 {
   qSlicerApplication* application = qSlicerApplication::application();
-  application->pauseRender();
+  if (application)
+  {
+    application->pauseRender();
+  }
 
   this->Internal->IOConnector->PeriodicProcess();
 
@@ -1847,7 +1850,11 @@ void vtkMRMLIGTLConnectorNode::PeriodicProcess()
     wasModifying.Node->EndModify(wasModifying.Modifying);
     this->Internal->PendingNodeModifications.pop_back();
     }
-  application->resumeRender();
+
+  if (application)
+  {
+    application->resumeRender();
+  }
 }
 
 //---------------------------------------------------------------------------
