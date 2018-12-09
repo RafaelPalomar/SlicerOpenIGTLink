@@ -1,4 +1,4 @@
-#include "vtkSlicerConfigure.h" 
+#include "vtkSlicerConfigure.h"
 
 //OpenIGTLink includes
 #include "igtlOSUtil.h"
@@ -34,8 +34,12 @@ public:
   };
   void onVideoReceivedEventFunc(vtkObject* caller, unsigned long eid,  void *calldata)
   {
-    std::cout << "*** Video received from server" << std::endl;
-    testSuccessful +=1;
+    vtkSmartPointer<igtlioDevice> device = (igtlioDevice*)calldata;
+    if (device->GetDeviceType() == "VIDEO")
+    {
+      std::cout << "*** Video received from server" << std::endl;
+      testSuccessful += 1;
+    }
   };
   int testSuccessful;
   vtkSmartPointer<vtkImageData> CreateTestImage()
@@ -71,7 +75,7 @@ int vtkMRMLConnectorVideoSendAndReceiveTest(int argc, char * argv [] )
   serverConnectorNode->SetScene(scene);
   igtl::Sleep(20);
   vtkSmartPointer<vtkMRMLIGTLConnectorNode> clientConnectorNode = vtkMRMLIGTLConnectorNode::New();
-  vtkSmartPointer<VideoObserver> videoClientObsever = VideoObserver::New();
+  vtkSmartPointer<VideoObserver> videoClientObsever = vtkSmartPointer<VideoObserver>::New();
   clientConnectorNode->AddObserver(clientConnectorNode->NewDeviceEvent, videoClientObsever, &VideoObserver::onVideoReceivedEventFunc);
   clientConnectorNode->SetTypeClient("localhost", 18946);
   clientConnectorNode->Start();
@@ -118,7 +122,7 @@ int vtkMRMLConnectorVideoSendAndReceiveTest(int argc, char * argv [] )
     return EXIT_FAILURE;
     }
   serverConnectorNode->PushNode(volumeNode);
-  
+
   // Make sure the Client receive the response message.
   starttime = vtkTimerLog::GetUniversalTime();
   while (vtkTimerLog::GetUniversalTime() - starttime < timeout)
@@ -133,11 +137,6 @@ int vtkMRMLConnectorVideoSendAndReceiveTest(int argc, char * argv [] )
   serverConnectorNode->Delete();
   scene->Delete();
   //Condition only holds when both onCommandReceivedEventFunc and onCommanResponseReceivedEventFunc are called.
-  if (videoClientObsever->testSuccessful==1)
-    {
-    videoClientObsever->Delete();
-    return EXIT_SUCCESS;
-    }
-  videoClientObsever->Delete();
-  return EXIT_FAILURE;
+  CHECK_INT(videoClientObsever->testSuccessful, 1);
+  return EXIT_SUCCESS;
 }
